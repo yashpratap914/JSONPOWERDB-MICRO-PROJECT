@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Enrollment Form</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <center><h1>Student Enrollment Form</h1></center>
+    <form>
+        <table border="0" align="center">
+            <tbody>
+                <tr>
+                    <td><label for="rollNo">Roll No: </label></td>
+                    <td><input id="rollNo" maxlength="50" name="rollNo" type="text" /></td>
+                </tr>
+                <tr>
+                    <td><label for="fullName">Full Name: </label></td>
+                    <td><input id="fullName" maxlength="50" name="fullName" type="text" disabled /></td>
+                </tr>
+                <tr>
+                    <td><label for="studentClass">Class: </label></td>
+                    <td><input id="studentClass" maxlength="50" name="studentClass" type="text" disabled /></td>
+                </tr>
+                <tr>
+                    <td><label for="birthDate">Birth Date: </label></td>
+                    <td><input id="birthDate" name="birthDate" type="date" disabled /></td>
+                </tr>
+                <tr>
+                    <td><label for="address">Address: </label></td>
+                    <td><input id="address" maxlength="50" name="address" type="text" disabled /></td>
+                </tr>
+                <tr>
+                    <td><label for="enrollmentDate">Enrollment Date: </label></td>
+                    <td><input id="enrollmentDate" name="enrollmentDate" type="date" disabled /></td>
+                </tr>
+                <tr>
+                    <td align="right"><input type="button" value="Save" onclick="saveStudent();" disabled id="saveButton" /></td>
+                    <td align="right"><input type="button" value="Update" onclick="updateStudent();" disabled id="updateButton" /></td>
+                    <td align="right"><input type="reset" value="Reset" onclick="resetForm();" id="resetButton" /></td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+
+    <script>
+        const JPDB_BASE_URL = "http://api.login2explore.com:5577";
+        const JPDB_IRL = "/api/irl";
+        const JPDB_IML = "/api/iml";
+        const DB_NAME = "SCHOOL-DB";
+        const REL_NAME = "STUDENT-TABLE";
+        const TOKEN = "your_api_token_here";
+
+        function createPUTRequest(connToken, jsonObj, dbName, relName) {
+            var putRequest = "{\n"
+                    + "\"token\" : \""
+                    + connToken
+                    + "\","
+                    + "\"dbName\": \""
+                    + dbName
+                    + "\",\n" + "\"cmd\" : \"PUT\",\n"
+                    + "\"rel\" : \""
+                    + relName + "\","
+                    + "\"jsonStr\": \n"
+                    + jsonObj
+                    + "\n"
+                    + "}";
+            return putRequest;
+        }
+
+        function createUPDATERequest(connToken, jsonObj, dbName, relName) {
+            var updateRequest = "{\n"
+                    + "\"token\" : \""
+                    + connToken
+                    + "\","
+                    + "\"dbName\": \""
+                    + dbName
+                    + "\",\n" + "\"cmd\" : \"UPDATE\",\n"
+                    + "\"rel\" : \""
+                    + relName + "\","
+                    + "\"jsonStr\": \n"
+                    + jsonObj
+                    + "\n"
+                    + "}";
+            return updateRequest;
+        }
+
+        function createGETRequest(connToken, dbName, relName, jsonObj) {
+            var getRequest = "{\n"
+                    + "\"token\" : \""
+                    + connToken
+                    + "\",\n"
+                    + "\"dbName\": \""
+                    + dbName
+                    + "\",\n"
+                    + "\"cmd\" : \"GET_BY_KEY\",\n"
+                    + "\"rel\" : \""
+                    + relName + "\",\n"
+                    + "\"jsonStr\": \n"
+                    + jsonObj
+                    + "\n"
+                    + "}";
+            return getRequest;
+        }
+
+        function executeCommand(reqString, dbBaseUrl, apiEndPointUrl) {
+            var url = dbBaseUrl + apiEndPointUrl;
+            var jsonObj;
+            $.post(url, reqString, function (result) {
+                jsonObj = JSON.parse(result);
+            }).fail(function (result) {
+                var dataJsonObj = result.responseText;
+                jsonObj = JSON.parse(dataJsonObj);
+            });
+            return jsonObj;
+        }
+
+        function validateAndGetFormData() {
+            var rollNo = document.getElementById("rollNo").value;
+            var fullName = document.getElementById("fullName").value;
+            var studentClass = document.getElementById("studentClass").value;
+            var birthDate = document.getElementById("birthDate").value;
+            var address = document.getElementById("address").value;
+            var enrollmentDate = document.getElementById("enrollmentDate").value;
+
+            if (rollNo === "" || fullName === "" || studentClass === "" || birthDate === "" || address === "" || enrollmentDate === "") {
+                alert("All fields are required!");
+                return "";
+            }
+
+            var jsonStrObj = {
+                RollNo: rollNo,
+                FullName: fullName,
+                Class: studentClass,
+                BirthDate: birthDate,
+                Address: address,
+                EnrollmentDate: enrollmentDate
+            };
+            return JSON.stringify(jsonStrObj);
+        }
+
+        function saveStudent() {
+            var jsonStr = validateAndGetFormData();
+            if (jsonStr === "") {
+                return;
+            }
+            var putReqStr = createPUTRequest(TOKEN, jsonStr, DB_NAME, REL_NAME);
+            jQuery.ajaxSetup({async: false});
+            var resultObj = executeCommand(putReqStr, JPDB_BASE_URL, JPDB_IML);
+            jQuery.ajaxSetup({async: true});
+            alert("Data saved successfully: " + JSON.stringify(resultObj));
+            resetForm();
+        }
+
+        function updateStudent() {
+            var jsonStr = validateAndGetFormData();
+            if (jsonStr === "") {
+                return;
+            }
+            var updateReqStr = createUPDATERequest(TOKEN, jsonStr, DB_NAME, REL_NAME);
+            jQuery.ajaxSetup({async: false});
+            var resultObj = executeCommand(updateReqStr, JPDB_BASE_URL, JPDB_IML);
+            jQuery.ajaxSetup({async: true});
+            alert("Data updated successfully: " + JSON.stringify(resultObj));
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById("rollNo").disabled = false;
+            document.getElementById("fullName").disabled = true;
+            document.getElementById("studentClass").disabled = true;
+            document.getElementById("birthDate").disabled = true;
+            document.getElementById("address").disabled = true;
+            document.getElementById("enrollmentDate").disabled = true;
+            document.getElementById("saveButton").disabled = true;
+            document.getElementById("updateButton").disabled = true;
+        }
+
+        function checkRollNo() {
+            var rollNo = document.getElementById("rollNo").value;
+            if (rollNo === "") {
+                alert("Roll No is required!");
+                return;
+            }
+            var jsonStr = {
+                RollNo: rollNo
+            };
+            var getReqStr = createGETRequest(TOKEN, DB_NAME, REL_NAME, JSON.stringify(jsonStr));
+            jQuery.ajaxSetup({async: false});
+            var resultObj = executeCommand(getReqStr, JPDB_BASE_URL, JPDB_IRL);
+            jQuery.ajaxSetup({async: true});
+            if (resultObj.status === 400) {
+                document.getElementById("rollNo").disabled = true;
+                document.getElementById("fullName").disabled = false;
+                document.getElementById("studentClass").disabled = false;
+                document.getElementById("birthDate").disabled = false;
+                document.getElementById("address").disabled = false;
+                document.getElementById("enrollmentDate").disabled = false;
+                document.getElementById("saveButton").disabled = false;
+                document.getElementById("updateButton").disabled = true;
+            } else {
+                var data = resultObj.data[0].record;
+                document.getElementById("rollNo").disabled = true;
+                document.getElementById("fullName").value = data.FullName;
+                document.getElementById("studentClass").value = data.Class;
+                document.getElementById("birthDate").value = data.BirthDate;
+                document.getElementById("address").value = data.Address;
+                document.getElementById("enrollmentDate").value = data.EnrollmentDate;
+                document.getElementById("fullName").disabled = false;
+                document.getElementById("studentClass").disabled = false;
+                document.getElementById("birthDate").disabled = false;
+                document.getElementById("address").disabled = false;
+                document.getElementById("enrollmentDate").disabled = false;
+                document.getElementById("saveButton").disabled = true;
+                document.getElementById("updateButton").disabled = false;
+            }
+        }
+
+        document.getElementById("rollNo").addEventListener("blur", checkRollNo);
+        resetForm();
+    </script>
+</body>
+</html>
